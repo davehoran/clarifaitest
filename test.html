@@ -1,0 +1,110 @@
+<html>
+
+<head>
+    <title>Clarifi test</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    
+    <script type="text/javascript" src="clarifai-latest.js"></script>
+
+    <!-- Compressed CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.3.0/css/foundation.min.css">
+    <!-- Compressed JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.3.0/js/foundation.min.js"></script>
+
+    <style>
+    body {
+        padding: 20px;
+    }
+    .tagitem {
+        list-style: none;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="row">
+        <div class="medium-6 columns">
+            <h1>Image Analysis</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="medium-6 columns">
+            <input type="text" placeholder="full URL to image" id="imagepath">
+        </div>
+        <div id="buttoncontainer" class="medium-6 columns">
+            <a href="#" class="button" id="scanaction">Scan Image</a> <a href="#" class="button" id="clearaction">Clear</a> 
+        </div>
+    </div>
+    
+    <div class="row">
+         <div class="medium-6 columns">
+            <img id="imagepreview" src="" width="1">
+        </div>    
+         <div class="medium-6 columns">
+            <div id="threshold"></div>
+            <div class="content">
+                <ul class="tagitem"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var app = new Clarifai.App(
+        'OiLz6xjUAenwsBOM2tALqn10jUFCtJiU7aKeMG8w',
+        'Btu1gXarrvHkisH3jdRIo18E9QYCKjaVOQIphdPC'
+    );
+
+    const THRESHOLD = 0.93;
+
+    var targetImage = 'https://www.mockupworld.co/wp-content/uploads/edd/2015/07/Macbook-Pro-Office-Mock-Up-Set-3.jpg';
+
+
+    function getTags(image) {
+
+        // predict the contents of an image by passing in a url
+        app.models.predict(Clarifai.GENERAL_MODEL, image).then(
+            function(response) {
+                //console.log(response);
+                var conceptsArray = response.outputs[0].data.concepts;
+                console.log("length of conceptsArray " + conceptsArray.length);
+
+                for (i = 0; i < conceptsArray.length; i = i + 1) {
+                    //console.log(conceptsArray[i].name + " : " + conceptsArray[i].value);
+
+                    if (conceptsArray[i].value >= THRESHOLD){
+                        $('.tagitem').append('<li>' + conceptsArray[i].name + " : " + conceptsArray[i].value + '</li>');
+                    }
+                }
+
+            },
+            function(err) {
+                console.error(err);
+            }
+        );
+    }
+
+    // handle the button click
+    $("div#buttoncontainer").on('click', 'a#scanaction', function() {
+        console.log('scan button clicked. passing to getTags()');
+        var imagefile = $("#imagepath").val();
+        $('#imagepreview').attr('src', imagefile);
+        $('#imagepreview').attr('width', 600);
+        $('div#threshold').append("Current term threshold is " + THRESHOLD + "</br></br>"); // display current threshold
+        getTags(imagefile);
+    });
+
+    // handle the clear click
+    $("div#buttoncontainer").on('click', 'a#clearaction', function() {
+        console.log('clear button clicked. clearing results.');
+        $('#imagepath').val('');
+        $('#imagepreview').attr('src', 'transparent.png');
+        $('#imagepreview').attr('width', 1);
+        $('.tagitem').empty();
+        $('div#threshold').empty();
+        $('#imagepath').focus();
+    });
+
+    </script>
+</body>
+
+</html>
